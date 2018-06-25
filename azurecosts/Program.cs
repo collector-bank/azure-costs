@@ -19,16 +19,16 @@ namespace azurecosts
         {
             if (args.Length != 1)
             {
-                Console.WriteLine("azurecosts 1.0 - Shows resource utilization based on downloaded csv files.\n\nUsage: azurecosts <file pattern>");
+                Console.WriteLine("azurecosts 1.0 - Shows resource costs based on downloaded csv files.\n\nUsage: azurecosts <file pattern>");
                 return 1;
             }
 
-            ParseCostFile(args[0]);
+            ParseCostFiles(args[0]);
 
             return 0;
         }
 
-        static void ParseCostFile(string filepattern)
+        static void ParseCostFiles(string filepattern)
         {
             string path, pattern;
             if (filepattern.Contains(Path.DirectorySeparatorChar) || filepattern.Contains(Path.AltDirectorySeparatorChar))
@@ -88,7 +88,17 @@ namespace azurecosts
                 .Concat(allcostgroups
                 .GroupBy(cg => cg.type)
                 .OrderBy(o => o.Key)
-                .Select(o => new { name = o.Key, costs = o.Select(cg => new { subscription = cg.subscription, cost_d = cg.cost, cost = cg.cost.ToString("0.00") }) }));
+                .Select(o => new { name = o.Key, costs = o.Select(cg => new { subscription = cg.subscription, cost_d = cg.cost, cost = cg.cost.ToString("0.00") }) }))
+                .Append(new
+                {
+                    name = "Total",
+                    costs = subscriptions.Select(s => new
+                    {
+                        subscription = s,
+                        cost_d = double.MinValue,
+                        cost = allcostgroups.Where(cg => cg.subscription == s).Sum(cg => cg.cost).ToString("0.00")
+                    })
+                });
 
             int coltype = uniquecostgroups
                 .Max(cg => cg.Length);
