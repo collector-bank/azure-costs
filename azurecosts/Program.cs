@@ -84,11 +84,11 @@ namespace azurecosts
                 .Select(cg => cg.Key);
 
             var outputs = " "
-                .Select( o => new { name = string.Empty, costs = subscriptions.Select(s => new { subscription = s, cost = s }) })
+                .Select(o => new { name = string.Empty, costs = subscriptions.Select(s => new { subscription = s, cost_d = double.MaxValue, cost = s }) })
                 .Concat(allcostgroups
                 .GroupBy(cg => cg.type)
                 .OrderBy(o => o.Key)
-                .Select(o => new { name = o.Key, costs = o.Select(cg => new { subscription = cg.subscription, cost = cg.cost.ToString("0.00") }) }));
+                .Select(o => new { name = o.Key, costs = o.Select(cg => new { subscription = cg.subscription, cost_d = cg.cost, cost = cg.cost.ToString("0.00") }) }));
 
             int coltype = uniquecostgroups
                 .Max(cg => cg.Length);
@@ -99,7 +99,7 @@ namespace azurecosts
                 .ToArray();
 
 
-            foreach (var cost in outputs)
+            foreach (var cost in outputs.OrderBy(o => o.costs.Sum(ocg => -ocg.cost_d)))
             {
                 Console.Write(string.Format("{0," + -coltype + "}", cost.name));
                 for (int i = 0; i < colsubscriptions.Length; i++)
